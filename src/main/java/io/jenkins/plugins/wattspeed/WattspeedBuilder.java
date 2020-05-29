@@ -10,6 +10,7 @@ import hudson.model.TaskListener;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.util.ListBoxModel;
+import hudson.util.Secret;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -22,6 +23,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
@@ -29,31 +32,32 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 public class WattspeedBuilder extends Builder implements SimpleBuildStep
 {
+  private static final Logger LOGGER = Logger.getLogger(WattspeedBuilder.class.getName());
   public static final String WATTSPEED_ENDPOINT = "https://api.wattspeed.com/";
 
-  private final String token;
-  protected final int project_id;
+  private final Secret token;
+  protected final int projects;
 
   @DataBoundConstructor
-  public WattspeedBuilder(String token, int project_id)
+  public WattspeedBuilder(Secret token, int projects)
   {
     this.token = token;
-    this.project_id = project_id;
+    this.projects = projects;
   }
 
   public String getToken()
   {
-    return token;
+    return this.token.getPlainText();
   }
 
   public int getProject_id()
   {
-    return project_id;
+    return this.projects;
   }
 
-  public static JSONArray FetchProjects(String token) throws Exception
+  public static JSONArray FetchProjects(Secret token) throws Exception
   {
-    String response = DescriptorImpl.getPostResponse(WATTSPEED_ENDPOINT + "listwebpages", token, false);
+    String response = DescriptorImpl.getPostResponse(WATTSPEED_ENDPOINT + "listwebpages", token.getPlainText(), false);
     if (JSONObject.fromObject(response).getInt("ok") == 1)
     {
       String projects = JSONObject.fromObject(response).getJSONObject("body").getString("webpages");
@@ -74,24 +78,27 @@ public class WattspeedBuilder extends Builder implements SimpleBuildStep
         String projectToken = null;
         if(projectsArray.getJSONObject(i).has("token"))
           projectToken = projectsArray.getJSONObject(i).getString("token");
-        if(projectsArray.getJSONObject(i).getInt("id") == this.project_id && projectToken != null)
+        if(projectsArray.getJSONObject(i).getInt("id") == this.projects && projectToken != null)
         {
+          listener.getLogger().println("Creating Wattspeed snapshot for " + projectsArray.getJSONObject(i).getString("url"));
           DescriptorImpl.getPostResponse(WATTSPEED_ENDPOINT + "update?token=" + URLEncoder.encode(projectToken, "UTF-8"), null, true);
+          listener.getLogger().println("Snapshot successfully created");
           break;
         }
       }
     }
     catch (Exception e)
     {
+      listener.getLogger().println("There was an error when trying to generate the Wattspeed snapshot");
       System.out.println(e.getMessage());
     }
   }
 
-  @Symbol("greet")
+  @Symbol("wattspeed")
   @Extension
   public static final class DescriptorImpl extends BuildStepDescriptor<Builder>
   {
-    private String token;
+    private Secret token;
     private JSONArray projectsArray;
     private boolean validToken = false;
     private boolean hasProjects = true;
@@ -110,7 +117,7 @@ public class WattspeedBuilder extends Builder implements SimpleBuildStep
 
     public FormValidation doCheckToken(@QueryParameter String value)
     {
-      this.token = value;
+      this.token = Secret.fromString(value);
 
       if (value.length() == 0)
         this.projectsArray = null;
@@ -162,7 +169,7 @@ public class WattspeedBuilder extends Builder implements SimpleBuildStep
 
     public void getProjects() throws Exception
     {
-      if(this.token == null || this.token.length() == 0)
+      if(this.token == null || this.token.getPlainText().length() == 0)
       {
         FormValidation.ok();
         return;
@@ -209,8 +216,9 @@ public class WattspeedBuilder extends Builder implements SimpleBuildStep
 
     @JavaScriptMethod
     public int getProjectsArray(String token) {
-      if(token != null)
-        this.token = token;
+      if(token != null) {
+        this.token = Secret.fromString(token);
+      }
 
       try
       {
