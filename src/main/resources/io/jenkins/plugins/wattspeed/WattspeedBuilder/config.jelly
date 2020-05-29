@@ -1,0 +1,118 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<st:bind var="backend" value="${descriptor}"/>
+<j:set var="projectsCount" value="0" />
+<script>
+    var apiToken = null;
+    function checkProjects() {
+        if(document.querySelector('#loading-projects'))
+            document.querySelector('#loading-projects').style.display = "table-row";
+
+        if(document.querySelector('#wattspeed-token'))
+            apiToken = document.querySelector('#wattspeed-token').value;
+
+        backend.getProjectsArray(apiToken, function(t) {
+            projectsCount = t.responseObject();
+            if(projectsCount === -1 || projectsCount === -2 || apiToken === null)
+            {
+                if(document.querySelector('#wattspeed-invalid-token'))
+                    document.querySelector('#wattspeed-invalid-token').style.display = "table-row";
+                if(document.querySelector('#projects_dd'))
+                    document.querySelector('#projects_dd').style.display = "none";
+                if(projectsCount === -1)
+                    document.querySelector('#wattspeed-error-message').textContent = "Provided token is invalid";
+                if(projectsCount === -2)
+                    document.querySelector('#wattspeed-error-message').textContent = "No webpages found in your Wattspeed account";
+            }
+            else
+            {
+                if(document.querySelector('#wattspeed-invalid-token'))
+                    document.querySelector('#wattspeed-invalid-token').style.display = "none";
+                if(document.querySelector('#projects_dd'))
+                    document.querySelector('#projects_dd').style.display = "table-row";
+            }
+
+            if(document.querySelector('#wattspeed-projects'))
+            {
+                let projectsElement = document.querySelector('#wattspeed-projects').parentNode.parentElement;
+                if(projectsCount > 0)
+                {
+                    projectsElement.style.display = "table-row";
+                    document.querySelector('#wattspeed-projects').style.display = "table-row";
+                    document.querySelector('#wattspeed-projects').focus();
+                }
+                else
+                {
+                    projectsElement.style.display = "none";
+                    document.querySelector('#wattspeed-projects').style.display = "none";
+                }
+            }
+
+            if(document.querySelector('#loading-projects'))
+                document.querySelector('#loading-projects').style.display = "none";
+        });
+    }
+    setTimeout(function(){
+        checkProjects();
+    }, 50);
+</script>
+
+<f:entry title="${%Token}" field="token">
+    <div style="display: inline-flex; width: 100%">
+        <f:textbox oninput="checkProjects()" id="wattspeed-token"/>
+        <span style="text-align: center; padding-left: 10px">
+            <svg
+                id="token_ok"
+                style="display: none"
+                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                <path d="M91.4 11.8 30.3 78.4c-1.1 1.2-3 1.2-4.1 0L9.9 60.6c-1.8-2-4.5-2-6.4 0-1.8 2-1.8 4.9 0 6.9L19.9 85.3c2.3 2.5 5.4 3.7 8.4 3.7 3 0 6.1-1.2 8.4-3.7l61.1-66.3c1.8-2 1.8-4.9 0-6.9-1.6-2-4.5-2-6.4-0.2z" style="fill:#250;stroke-width:2"/>
+            </svg>
+            <svg id="loading-projects" width="24" height="24" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg" style="display: none">
+               <defs>
+                   <linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a">
+                       <stop stop-color="#000" stop-opacity="0" offset="0%"/>
+                       <stop stop-color="#000" stop-opacity=".631" offset="63.146%"/>
+                       <stop stop-color="#000" offset="100%"/>
+                   </linearGradient>
+               </defs>
+               <g fill="none" fill-rule="evenodd">
+                   <g transform="translate(1 1)">
+                       <path d="M36 18c0-9.94-8.06-18-18-18" id="Oval-2" stroke="url(#a)" stroke-width="2">
+                           <animateTransform
+                               attributeName="transform"
+                               type="rotate"
+                               from="0 18 18"
+                               to="360 18 18"
+                               dur="0.9s"
+                               repeatCount="indefinite" />
+                       </path>
+                       <circle fill="#fff" cx="36" cy="18" r="1">
+                           <animateTransform
+                               attributeName="transform"
+                               type="rotate"
+                               from="0 18 18"
+                               to="360 18 18"
+                               dur="0.9s"
+                               repeatCount="indefinite" />
+                       </circle>
+                   </g>
+               </g>
+            </svg>
+        </span>
+    </div>
+   </f:entry>
+
+    <tr id="wattspeed-invalid-token">
+        <td colspan="2"></td>
+        <td>
+            <div class="error" id="wattspeed-error-message">
+                Provided token is invalid
+            </div>
+        </td>
+        <td></td>
+    </tr>
+
+    <f:entry field="projects" title="Project">
+       <f:select id="wattspeed-projects" style="display: none"/>
+    </f:entry>
+</j:jelly>
