@@ -1,8 +1,6 @@
 Wattspeed plugin for Jenkins
 =========================
 
-[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/kubernetes.svg)](https://plugins.jenkins.io/kubernetes)
-
 Wattspeed helps you monitor and improve web pages in‌ ‌order‌ ‌to‌ ‌give‌ ‌your‌ site‌ ‌a‌ ‌speed‌ ‌bump.
 
 ---
