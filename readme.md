@@ -18,7 +18,7 @@ This plugin will let you triggers a website snapshot generation in your [Wattspe
     To get the token, log into your [Wattspeed](https://www.wattspeed.com/signin) account, then head forward to the
     [profile](https://www.wattspeed.com/profile) page.
   
-  ![](E:\wattadmin\plugins\jenkins\images\profile.png)
+  ![image](E:\wattadmin\plugins\jenkins\images\profile.png)
 
 ### Generating a snapshot
 
