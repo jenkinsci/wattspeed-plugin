@@ -23,7 +23,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jenkins.tasks.SimpleBuildStep;
@@ -55,7 +54,7 @@ public class WattspeedBuilder extends Builder implements SimpleBuildStep
     return this.projects;
   }
 
-  public static JSONArray FetchProjects(Secret token) throws Exception
+  public static JSONArray fetchProjects(Secret token) throws Exception
   {
     String response = DescriptorImpl.getPostResponse(WATTSPEED_ENDPOINT + "listwebpages", token.getPlainText(), false);
     if (JSONObject.fromObject(response).getInt("ok") == 1)
@@ -72,7 +71,7 @@ public class WattspeedBuilder extends Builder implements SimpleBuildStep
   {
     try
     {
-      JSONArray projectsArray = this.FetchProjects(this.token);
+      JSONArray projectsArray = this.fetchProjects(this.token);
       for (int i = 0; i < projectsArray.size(); i++)
       {
         String projectToken = null;
@@ -175,7 +174,7 @@ public class WattspeedBuilder extends Builder implements SimpleBuildStep
         return;
       }
 
-      this.projectsArray = WattspeedBuilder.FetchProjects(this.token);
+      this.projectsArray = WattspeedBuilder.fetchProjects(this.token);
       if (this.projectsArray != null)
       {
         if(this.projectsArray.size() == 0) {
